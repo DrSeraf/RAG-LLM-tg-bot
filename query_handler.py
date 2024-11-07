@@ -1,42 +1,10 @@
-# Из нулевого + старое
-from langchain_community.document_loaders import PyPDFLoader, DirectoryLoader,UnstructuredWordDocumentLoader
-import requests
-from yandex_chain import YandexLLM
-from langchain.text_splitter import (
-    CharacterTextSplitter,
-    RecursiveCharacterTextSplitter,
-)
-from langchain.vectorstores import FAISS
-from langchain.schema import StrOutputParser
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough
-import time
-from langchain.embeddings.base import Embeddings
-from langchain.agents import AgentExecutor, create_react_agent
-from langchain import hub
-from langchain.chains.conversation.memory import ConversationSummaryMemory
-# Из 1 фрагмента
 import os
-from langchain_community.document_loaders import PyPDFLoader, DirectoryLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import FAISS
-from yandex_chain import YandexEmbeddings, YandexLLM
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough
-from langchain.schema import StrOutputParser
-# Из 5 фрагмента
-from langchain.chains import ConversationChain
-from langchain.chains.conversation.memory import ConversationSummaryMemory
-from langchain.prompts import ChatPromptTemplate
-# Недавнее
+import time
 import re
 from unidecode import unidecode
-import os
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-import os
-import time
 from langchain_community.document_loaders import PyPDFLoader, DirectoryLoader
-from langchain.vectorstores import FAISS
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores import FAISS
 from langchain.schema import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
@@ -74,7 +42,7 @@ template = """
 {context}
 
 Вопрос: {question}
-Постарайся ответить максимально правильно. Твой ответ я загружаю сообщением в телеграмм. Используй формление сообщения, чтобы телеграмм понимал его.
+Постарайся ответить максимально правильно. ОЧЕНЬ ВАЖНО, ЕСЛИ ТЫ НЕ ЗНАЕШЬ ОТВЕТ - ОТВЕТЬ Я НЕ ЗНАЮ. ЭТО СТРОГАЯ ИНСТРУКЦИЯ. ЗА ЛОЖНЫЙ ОТВЕТ ТЕБЕ ВЫПИШУТ ШТРАФ -1 БАЛЛ К РЕЙТИНГУ!
 """
 prompt = ChatPromptTemplate.from_template(template)
 
