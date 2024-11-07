@@ -10,8 +10,8 @@ import time
 from logger import log_start, log_periodic, log_received_question, log_relevant_chunks, log_selected_document, log_ai_response
 
 # Глобальные переменные для отслеживания состояния ожидания вопросов
-waiting_for_question = False
-last_question_time = None
+waiting_for_questions = {}  # Словарь для хранения состояния ожидания для каждого пользователя
+last_question_times = {}  # Словарь для хранения времени последнего запроса для каждого пользователя
 
 async def start(update: Update, context: CallbackContext) -> None:
     welcome_message = (
@@ -29,16 +29,15 @@ async def start(update: Update, context: CallbackContext) -> None:
     log_start()
 
 async def handle_message(update: Update, context: CallbackContext) -> None:
-    global waiting_for_question, last_question_time
+    user_id = update.message.from_user.id
     
-    if waiting_for_question:
-        user_id = update.message.from_user.id
+    if waiting_for_questions.get(user_id, False):
         first_name = update.message.from_user.first_name
         last_name = update.message.from_user.last_name or ""
         username = update.message.from_user.username or ""
         user_message = update.message.text  
 
-        last_question_time = time.time()  # Обновляем время последнего запроса
+        last_question_times[user_id] = time.time()  # Обновляем время последнего запроса
         
         await update.message.reply_text("Ищу информацию по вашему вопросу!")
         
@@ -66,35 +65,33 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
         await update.message.reply_text("Введите /question чтобы задать вопрос.")
 
 async def question(update: Update, context: CallbackContext) -> None:
-    global waiting_for_question, last_question_time
-    waiting_for_question = True
-    last_question_time = time.time()  # Сохраняем текущее время
+    user_id = update.message.from_user.id
+    waiting_for_questions[user_id] = True
+    last_question_times[user_id] = time.time()  # Сохраняем текущее время
     await update.message.reply_text("Слушаю ваш вопрос!")
 
 async def stop(update: Update, context: CallbackContext) -> None:
-    global waiting_for_question
-    waiting_for_question = False
+    user_id = update.message.from_user.id
+    waiting_for_questions[user_id] = False
+    last_question_times.pop(user_id, None)  # Удаляем время последнего запроса
     await update.message.reply_text("Перестал ожидать вопрос. Если хотите задать новый, напишите /question.")
 
 async def info(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text("Держи информацию")
 
 def periodic_check():
-    global waiting_for_question, last_question_time
-    
     while True:
-        if waiting_for_question and last_question_time is not None:
-            current_time = time.time()
-            if current_time - last_question_time > 600:  # 10 минут
-                waiting_for_question = False
-                last_question_time = None  # Сброс времени
-                logging.info("Время ожидания истекло.")
-                # Здесь можно добавить код для отправки сообщения пользователю о завершении ожидания.
+        current_time = time.time()
+        for user_id in list(waiting_for_questions.keys()):
+            if current_time - last_question_times.get(user_id, 0) > 600:  # 10 минут
+                waiting_for_questions[user_id] = False
+                last_question_times.pop(user_id, None)  # Удаляем время последнего запроса
+                logging.info(f"Время ожидания истекло для пользователя {user_id}.")
         
         time.sleep(60)  # Проверяем каждую минуту
 
 def main():
-    application = ApplicationBuilder().token("YOUR_TOKEN_HERE").build()
+    application = ApplicationBuilder().token("7902299353:AAEr8S8lybuzGM1A4OmBtUdr-n4ItPs9tBs").build()
     
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("question", question))
