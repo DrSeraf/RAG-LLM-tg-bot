@@ -8,16 +8,8 @@ from query_handler import process_query
 from db_handler import insert_message
 import threading
 import time
-
-# Настройка логирования
-logging.basicConfig(
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    level=logging.INFO,
-    handlers=[
-        logging.FileHandler("bot.log"),  # Логирование в файл
-        logging.StreamHandler()            # Логирование в консоль
-    ]
-)
+# Импортируем логгер
+from logger import log_start, log_periodic, log_received_question, log_relevant_chunks, log_selected_document, log_ai_response
 
 def start(update: Update, context: CallbackContext) -> None:
     welcome_message = (
@@ -31,7 +23,7 @@ def start(update: Update, context: CallbackContext) -> None:
     )
     
     update.message.reply_text(welcome_message, parse_mode='HTML')
-    logging.info("Бот начал работу.")
+    log_start()
 
 def handle_message(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
@@ -40,16 +32,27 @@ def handle_message(update: Update, context: CallbackContext) -> None:
     username = update.message.from_user.username or ""
     user_message = update.message.text  
     
-    logging.info(f"Получен вопрос от {first_name} {last_name} (@{username}): {user_message}")
+    log_received_question((first_name, last_name, username), user_message)
 
     result = process_query(user_message)
     
+     # Логируем релевантные чанки и выбранный документ
+    relevant_chunks = result.get("context", "").split("\n\n")  # Предполагаем, что чанки разделены двойным переносом строки
+    log_relevant_chunks(relevant_chunks)
+
+    selected_document = result.get("document")
+    if selected_document:
+        log_selected_document(selected_document)
+
     # Вставляем данные в базу данных
     insert_message(user_id=user_id,
                    fio=f"{first_name} {last_name}",
                    username=username,
                    user_message=user_message,
                    bot_response=result["answer"])
+
+    # Логируем ответ ИИ
+    log_ai_response(result["answer"])
 
     # Отправляем ответ пользователю
     update.message.reply_text(result["answer"])
@@ -68,7 +71,7 @@ def main():
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
     
-# Запуск потока для периодического логирования
+    # Запуск потока для периодического логирования
     threading.Thread(target=periodic_logging, daemon=True).start()
 
     updater.start_polling()
