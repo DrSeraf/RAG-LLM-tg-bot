@@ -1,13 +1,23 @@
 import os
 from telegram import Update
+import logging
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
-
 # Импортируем функцию для обработки запросов
 from query_handler import process_query
-
 # Импорт в БД
 from db_handler import insert_message
+import threading
+import time
 
+# Настройка логирования
+logging.basicConfig(
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    level=logging.INFO,
+    handlers=[
+        logging.FileHandler("bot.log"),  # Логирование в файл
+        logging.StreamHandler()            # Логирование в консоль
+    ]
+)
 
 def start(update: Update, context: CallbackContext) -> None:
     welcome_message = (
@@ -21,6 +31,7 @@ def start(update: Update, context: CallbackContext) -> None:
     )
     
     update.message.reply_text(welcome_message, parse_mode='HTML')
+    logging.info("Бот начал работу.")
 
 def handle_message(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
@@ -29,6 +40,8 @@ def handle_message(update: Update, context: CallbackContext) -> None:
     username = update.message.from_user.username or ""
     user_message = update.message.text  
     
+    logging.info(f"Получен вопрос от {first_name} {last_name} (@{username}): {user_message}")
+
     result = process_query(user_message)
     
     # Вставляем данные в базу данных
@@ -41,6 +54,11 @@ def handle_message(update: Update, context: CallbackContext) -> None:
     # Отправляем ответ пользователю
     update.message.reply_text(result["answer"])
 
+def periodic_logging():
+    while True:
+        logging.info("Бот стабильно продолжает работу.")
+        time.sleep(3600)  # Логировать каждый час
+
 def main():
     # Замените 'YOUR_TOKEN' на токен вашего бота
     updater = Updater("7902299353:AAEr8S8lybuzGM1A4OmBtUdr-n4ItPs9tBs")
@@ -50,6 +68,9 @@ def main():
     dp.add_handler(CommandHandler("start", start))
     dp.add_handler(MessageHandler(Filters.text & ~Filters.command, handle_message))
     
+# Запуск потока для периодического логирования
+    threading.Thread(target=periodic_logging, daemon=True).start()
+
     updater.start_polling()
     
     updater.idle()
