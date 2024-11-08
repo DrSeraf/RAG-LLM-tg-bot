@@ -19,15 +19,15 @@ def create_connection():
         return None
 
 # Функция для вставки данных в таблицу messages
-def insert_message(user_id, fio, username, user_message, bot_response):
+def insert_message(user_id, fio, username, user_message, bot_response, document):
     connection = create_connection()
     if connection:
         cursor = connection.cursor()
         query = """
-        INSERT INTO messages (user_id, fio, username, user_message, bot_response)
-        VALUES (%s, %s, %s, %s, %s)
+        INSERT INTO messages (user_id, fio, username, user_message, bot_response, doc)
+        VALUES (%s, %s, %s, %s, %s, %s)
         """
-        values = (user_id, fio, username, user_message, bot_response)
+        values = (user_id, fio, username, user_message, bot_response, document)
         
         try:
             cursor.execute(query, values)

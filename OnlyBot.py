@@ -53,10 +53,11 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
             log_selected_document(selected_document)
 
         insert_message(user_id=user_id,
-                       fio=f"{first_name} {last_name}",
-                       username=username,
-                       user_message=user_message,
-                       bot_response=result["answer"])
+               fio=f"{first_name} {last_name}",
+               username=username,
+               user_message=user_message,
+               bot_response=result["answer"],
+               document=selected_document) #Добавляем документ выбранный
 
         log_ai_response(result["answer"])
         
