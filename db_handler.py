@@ -38,3 +38,44 @@ def insert_message(user_id, fio, username, user_message, bot_response, document)
         finally:
             cursor.close()
             connection.close()
+
+def check_email_exists(user_id):
+    connection = create_connection()
+    if connection:
+        cursor = connection.cursor()
+        
+        query = "SELECT email FROM emails WHERE user_id=%s"
+        
+        try:
+            cursor.execute(query, (user_id,))
+            result = cursor.fetchone()
+            return result is not None and result[0] is not None  # Проверяем наличие email
+        except Error as e:
+            print(f"Ошибка при проверке email: {e}")
+            return False
+        finally:
+            cursor.close()
+            connection.close()
+
+def add_email(user_id, username, email):
+    connection = create_connection()
+    if connection:
+        cursor = connection.cursor()
+        
+        query = """
+            INSERT INTO emails (username, user_id, email)
+            VALUES (%s, %s, %s)
+            ON DUPLICATE KEY UPDATE email=%s;
+        """
+        
+        values = (username, user_id, email, email)
+        
+        try:
+            cursor.execute(query, values)
+            connection.commit()
+            print("Email успешно добавлен или обновлен в БД")
+        except Error as e:
+            print(f"Ошибка при добавлении email: {e}")
+        finally:
+            cursor.close()
+            connection.close()
