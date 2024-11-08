@@ -10,6 +10,9 @@ logging.basicConfig(
     ]
 )
 
+# Отключаем логирование для библиотеки telegram
+logging.getLogger('telegram').setLevel(logging.WARNING)
+
 def log_start():
     logging.info("Бот начал свою работу.")
 

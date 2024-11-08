@@ -88,7 +88,7 @@ def periodic_check():
                 last_question_times.pop(user_id, None)  # Удаляем время последнего запроса
                 logging.info(f"Время ожидания истекло для пользователя {user_id}.")
       
-        time.sleep(60)  # Проверяем каждую минуту
+        time.sleep(600)  # Проверяем каждую минуту
 
 def main():
     application = ApplicationBuilder().token("7902299353:AAEr8S8lybuzGM1A4OmBtUdr-n4ItPs9tBs").build()
