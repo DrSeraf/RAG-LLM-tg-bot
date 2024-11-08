@@ -66,11 +66,15 @@ def add_message_to_history(user_id, question, answer):
     if user_id not in user_histories:
         user_histories[user_id] = []
     
-    # Удаление устаревших сообщений
+    # Удаление устаревших сообщений (старше 10 минут)
     user_histories[user_id] = [msg for msg in user_histories[user_id] if current_time - msg['timestamp'] < TIME_LIMIT]
     
     # Добавление нового сообщения в историю
     user_histories[user_id].append({'timestamp': current_time, 'question': question, 'answer': answer})
+    
+    # Ограничение количества сообщений до 3
+    if len(user_histories[user_id]) > 3:
+        user_histories[user_id].pop(0)  # Удаляем самое старое сообщение
 
 def get_most_relevant_document(query):
     min_distance = float('inf')
