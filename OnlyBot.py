@@ -43,7 +43,7 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
         
         log_received_question((first_name, last_name, username), user_message)
 
-        result = process_query(user_message)
+        result = process_query(user_id, user_message)  # Передаем user_id в функцию
         
         relevant_chunks = result.get("context", "").split("\n\n")
         log_relevant_chunks(relevant_chunks)

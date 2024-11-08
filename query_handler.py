@@ -9,7 +9,8 @@ from langchain.schema import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from yandex_chain import YandexLLM, YandexEmbeddings
-
+# Глобальная переменная для хранения истории пользователей
+user_histories = {}
 # Путь к директории с векторными базами данных
 vector_store_path = "VDB"
 
@@ -58,13 +59,18 @@ dialog_history = []
 MAX_MESSAGES = 5  # Максимальное количество сообщений в диалоге
 TIME_LIMIT = 3600  # Время хранения данных в секундах (1 час)
 
-def add_message_to_history(question, answer):
-    global dialog_history
+def add_message_to_history(user_id, question, answer):
     current_time = time.time()
-    dialog_history[:] = [msg for msg in dialog_history if current_time - msg['timestamp'] < TIME_LIMIT]
-    dialog_history.append({'timestamp': current_time, 'question': question, 'answer': answer})
-    if len(dialog_history) > MAX_MESSAGES:
-        dialog_history.pop(0)
+    
+    # Инициализация истории для нового пользователя
+    if user_id not in user_histories:
+        user_histories[user_id] = []
+    
+    # Удаление устаревших сообщений
+    user_histories[user_id] = [msg for msg in user_histories[user_id] if current_time - msg['timestamp'] < TIME_LIMIT]
+    
+    # Добавление нового сообщения в историю
+    user_histories[user_id].append({'timestamp': current_time, 'question': question, 'answer': answer})
 
 def get_most_relevant_document(query):
     min_distance = float('inf')
@@ -80,8 +86,9 @@ def get_most_relevant_document(query):
 
     return most_relevant_doc
 
-def get_context(query):
+def get_context(user_id, query):
     relevant_doc = get_most_relevant_document(query)
+    
     if relevant_doc:
         docs = vector_stores[relevant_doc].similarity_search(query, k=5)
         context = "\n\n".join([d.page_content for d in docs])
@@ -90,27 +97,30 @@ def get_context(query):
             "document": relevant_doc,
             "success": True
         }
+    
     return {
         "context": "Не удалось найти релевантный документ.",
         "document": None,
         "success": False
     }
 
-def process_query(query):
-    global dialog_history  
-    context_info = get_context(query)
+def process_query(user_id, query):
+    context_info = get_context(user_id, query)
     
     if context_info["success"]:
-        dialog_context = "\n".join([f"Вопрос: {msg['question']}\nОтвет: {msg['answer']}" for msg in dialog_history])
-        dialog_context += f"\nВопрос: {query}\n"
+        # Формируем историю пользователя для контекста
+        dialog_context = "\n".join([f"Вопрос: {msg['question']}\nОтвет: {msg['answer']}" for msg in user_histories.get(user_id, [])])
         
+        # Добавляем историю пользователя в контекст
         prompt_input = {
-            "context": f"{dialog_context}\n{context_info['context']}",
+            "context": f"Используй контекст:\n{dialog_context}\n\n{context_info['context']}",
             "question": query
         }
         
         response = chain.invoke(prompt_input)
-        add_message_to_history(query, response)
+        
+        # Сохраняем вопрос и ответ в истории пользователя
+        add_message_to_history(user_id, query, response)
         
         return {
             "answer": response,
