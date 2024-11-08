@@ -8,6 +8,7 @@ from db_handler import insert_message
 import threading
 import time
 from logger import log_start, log_periodic, log_received_question, log_relevant_chunks, log_selected_document, log_ai_response
+from query_handler import process_query, user_histories  # Импортируем user_histories
 
 # Глобальные переменные для отслеживания состояния ожидания вопросов
 waiting_for_questions = {}  # Словарь для хранения состояния ожидания для каждого пользователя
@@ -75,6 +76,11 @@ async def stop(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
     waiting_for_questions[user_id] = False
     last_question_times.pop(user_id, None)  # Удаляем время последнего запроса
+    
+    # Удаляем всю историю пользователя
+    if user_id in user_histories:
+        del user_histories[user_id]
+    
     await update.message.reply_text("Перестал ожидать вопрос. Если хотите задать новый, напишите /question.")
 
 async def info(update: Update, context: CallbackContext) -> None:
