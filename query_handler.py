@@ -89,7 +89,7 @@ def get_context(user_id, query):
         context_chunks = [d.page_content for d in docs]
         
         # Логируем выбранные чанки контекста 
-        log_relevant_chunks(context_chunks)
+        #log_relevant_chunks(context_chunks)
 
         context = "\n\n".join(context_chunks)
         

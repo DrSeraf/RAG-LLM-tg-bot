@@ -128,7 +128,7 @@ def periodic_check():
         time.sleep(600)
 
 def main():
-    application = ApplicationBuilder().token("YOUR_TELEGRAM_BOT_TOKEN").build()
+    application = ApplicationBuilder().token("7902299353:AAEr8S8lybuzGM1A4OmBtUdr-n4ItPs9tBs").build()
     
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("question", question))
