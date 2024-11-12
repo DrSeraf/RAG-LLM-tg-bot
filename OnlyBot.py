@@ -9,7 +9,6 @@ import threading
 import time
 import re  # Для проверки валидности email
 from logger import log_start, log_periodic, log_received_question, log_relevant_chunks, log_selected_document, log_ai_response
-from query_handler import process_query, user_histories
 
 # Глобальные переменные для отслеживания состояния ожидания вопросов и регистрации
 waiting_for_questions = {}
@@ -104,9 +103,6 @@ async def stop(update: Update, context: CallbackContext) -> None:
     waiting_for_questions[user_id] = False
     last_question_times.pop(user_id, None)
     
-    if user_id in user_histories:
-        del user_histories[user_id]
-    
     await update.message.reply_text("Перестал ожидать вопрос. Если хотите задать новый, напишите /question.")
 
 async def info(update: Update, context: CallbackContext) -> None:
@@ -145,7 +141,7 @@ def periodic_check():
         time.sleep(600)
 
 def main():
-    application = ApplicationBuilder().token("YOUR_BOT_TOKEN").build()
+    application = ApplicationBuilder().token("7902299353:AAEr8S8lybuzGM1A4OmBtUdr-n4ItPs9tBs").build()
     
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("question", question))

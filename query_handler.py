@@ -9,8 +9,7 @@ from langchain.schema import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from yandex_chain import YandexLLM, YandexEmbeddings
-# Глобальная переменная для хранения истории пользователей
-user_histories = {}
+
 # Путь к директории с векторными базами данных
 vector_store_path = "VDB"
 
@@ -54,28 +53,6 @@ chain = (
     | StrOutputParser()
 )
 
-# Инициализация списка для хранения диалога и переменной для отслеживания времени
-dialog_history = []
-MAX_MESSAGES = 5  # Максимальное количество сообщений в диалоге
-TIME_LIMIT = 3600  # Время хранения данных в секундах (1 час)
-
-def add_message_to_history(user_id, question, answer):
-    current_time = time.time()
-    
-    # Инициализация истории для нового пользователя
-    if user_id not in user_histories:
-        user_histories[user_id] = []
-    
-    # Удаление устаревших сообщений (старше 10 минут)
-    user_histories[user_id] = [msg for msg in user_histories[user_id] if current_time - msg['timestamp'] < TIME_LIMIT]
-    
-    # Добавление нового сообщения в историю
-    user_histories[user_id].append({'timestamp': current_time, 'question': question, 'answer': answer})
-    
-    # Ограничение количества сообщений до 3
-    if len(user_histories[user_id]) > 3:
-        user_histories[user_id].pop(0)  # Удаляем самое старое сообщение
-
 def get_most_relevant_document(query):
     min_distance = float('inf')
     most_relevant_doc = None
@@ -112,29 +89,21 @@ def process_query(user_id, query):
     context_info = get_context(user_id, query)
     
     if context_info["success"]:
-        # Формируем историю пользователя для контекста
-        dialog_context = "\n".join([f"Вопрос: {msg['question']}\nОтвет: {msg['answer']}" for msg in user_histories.get(user_id, [])])
-        
-        # Добавляем историю пользователя в контекст
-        prompt_input = {
-            "context": f"Используй контекст:\n{dialog_context}\n\n{context_info['context']}",
-            "question": query
-        }
-        
-        response = chain.invoke(prompt_input)
-        
-        # Сохраняем вопрос и ответ в истории пользователя
-        add_message_to_history(user_id, query, response)
-        
-        return {
-            "answer": response,
-            "document": context_info["document"],
-            "context": context_info["context"]
-        }
+       prompt_input = {
+           "context": context_info['context'],  
+           "question": query
+       }
+       
+       response = chain.invoke(prompt_input)
+       return {
+           "answer": response,
+           "document": context_info["document"],
+           "context": context_info["context"]
+       }
     
     else:
-        return {
-            "answer": "Извините, не удалось найти информацию для ответа на ваш вопрос.",
-            "document": None,
-            "context": None
-        }
+       return {
+           "answer": "Извините, не удалось найти информацию для ответа на ваш вопрос.",
+           "document": None,
+           "context": None
+       }
