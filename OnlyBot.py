@@ -8,7 +8,7 @@ from db_handler import insert_message, check_email_exists, add_email  # Импо
 import threading
 import time
 import re  # Для проверки валидности email
-from logger import log_start, log_periodic, log_received_question, log_relevant_chunks, log_selected_document, log_ai_response
+from logger import log_start, log_periodic, log_received_question, log_relevant_documents, log_relevant_chunks, log_ai_response, log_user_question, log_prompt
 
 # Глобальные переменные для отслеживания состояния ожидания вопросов и регистрации
 waiting_for_questions = {}
@@ -39,51 +39,38 @@ async def start(update: Update, context: CallbackContext) -> None:
 
 async def handle_message(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
+    username = update.message.from_user.username or ""
     
-    if user_id in waiting_for_email:
-        email = update.message.text.strip()
-        
-        if is_valid_email(email):
-            add_email(user_id, update.message.from_user.username or "", email)  # Добавляем email в БД
-            del waiting_for_email[user_id]  # Убираем пользователя из ожидания email
-            
-            await update.message.reply_text("Спасибо! Теперь вы можете задавать вопросы.")
-            return
-        else:
-            await update.message.reply_text("Неверный формат email. Убедитесь, что он заканчивается на @gazprom-neft.ru.")
-            return
-
     if waiting_for_questions.get(user_id, False):
-        first_name = update.message.from_user.first_name
-        last_name = update.message.from_user.last_name or ""
-        username = update.message.from_user.username or ""
         user_message = update.message.text  
-
-        last_question_times[user_id] = time.time()
         
+        log_user_question(user_id, username, user_message)
+
         await update.message.reply_text("Ищу информацию по вашему вопросу!")
         
-        log_received_question((first_name, last_name, username), user_message)
-
-        result = process_query(user_id, user_message)
+        context_info = process_query(user_id, user_message)
         
-        relevant_chunks = result.get("context", "").split("\n\n")
-        log_relevant_chunks(relevant_chunks)
+        # Логируем релевантный документ и чанки
+        if context_info["document"]:
+            relevant_doc = context_info["document"]
+            relevant_chunks = context_info["context"].split("\n\n")
+            
+            log_relevant_documents([relevant_doc])
+            log_relevant_chunks(relevant_chunks)
 
-        selected_document = result.get("document")
-        if selected_document:
-            log_selected_document(selected_document)
+            prompt_input = {
+                "context": context_info['context'],  
+                "question": user_message
+            }
+            
+            log_prompt(prompt_input)
 
-        insert_message(user_id=user_id,
-               fio=f"{first_name} {last_name}",
-               username=username,
-               user_message=user_message,
-               bot_response=result["answer"],
-               document=selected_document)
-
-        log_ai_response(result["answer"])
-        
-        await update.message.reply_text(result["answer"])
+            response = context_info["answer"]
+            log_ai_response(response)
+            
+            await update.message.reply_text(response)
+        else:
+            await update.message.reply_text("Извините, не удалось найти информацию для ответа на ваш вопрос.")
     else:
         await update.message.reply_text("Введите /question чтобы задать вопрос.")
 
@@ -141,7 +128,7 @@ def periodic_check():
         time.sleep(600)
 
 def main():
-    application = ApplicationBuilder().token("7902299353:AAEr8S8lybuzGM1A4OmBtUdr-n4ItPs9tBs").build()
+    application = ApplicationBuilder().token("YOUR_TELEGRAM_BOT_TOKEN").build()
     
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("question", question))

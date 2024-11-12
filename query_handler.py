@@ -9,6 +9,7 @@ from langchain.schema import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from yandex_chain import YandexLLM, YandexEmbeddings
+from logger import log_relevant_documents, log_relevant_chunks
 
 # Путь к директории с векторными базами данных
 vector_store_path = "VDB"
@@ -57,13 +58,25 @@ def get_most_relevant_document(query):
     min_distance = float('inf')
     most_relevant_doc = None
 
+    documents_used = []  # Для хранения использованных документов
+
     for filename, vs in vector_stores.items():
         docs = vs.similarity_search_with_score(query, k=1)
         if docs:
             distance = docs[0][1]
+            documents_used.append((filename, distance))  # Добавляем документ и его расстояние
+            
             if distance < min_distance:
                 min_distance = distance
                 most_relevant_doc = filename
+
+    # Логируем использованные документы по убыванию релевантности (по расстоянию)
+    documents_used.sort(key=lambda x: x[1])  # Сортируем по расстоянию (меньшее значение — более релевантно)
+    
+    # Записываем только топ-5 документов в логах (если есть)
+    top_documents = [doc[0] for doc in documents_used[:5]]
+    
+    log_relevant_documents(top_documents)
 
     return most_relevant_doc
 
@@ -72,7 +85,14 @@ def get_context(user_id, query):
     
     if relevant_doc:
         docs = vector_stores[relevant_doc].similarity_search(query, k=5)
-        context = "\n\n".join([d.page_content for d in docs])
+        
+        context_chunks = [d.page_content for d in docs]
+        
+        # Логируем выбранные чанки контекста 
+        log_relevant_chunks(context_chunks)
+
+        context = "\n\n".join(context_chunks)
+        
         return {
             "context": context,
             "document": relevant_doc,
