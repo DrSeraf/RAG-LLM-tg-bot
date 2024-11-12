@@ -8,8 +8,10 @@ from db_handler import insert_message, check_email_exists, add_email  # Импо
 import threading
 import time
 import re  # Для проверки валидности email
+from logger import log_start, log_user_question, log_ai_response, log_prompt
+    
 from logger import log_start, log_periodic, log_received_question, log_relevant_documents, log_relevant_chunks, log_ai_response, log_user_question, log_prompt
-from query_handler import process_query, template, chain 
+from query_handler import process_query, template, chain
 
 # Глобальные переменные для отслеживания состояния ожидания вопросов и регистрации
 waiting_for_questions = {}
@@ -38,6 +40,18 @@ async def start(update: Update, context: CallbackContext) -> None:
     await update.message.reply_text(welcome_message, parse_mode='HTML')
     log_start()
 
+async def handle_email_input(update: Update, context: CallbackContext) -> None:
+    user_id = update.message.from_user.id
+    email = update.message.text.strip()
+
+    if is_valid_email(email):
+        # Сохраняем email в базе данных
+        add_email(user_id, update.message.from_user.username or "", email)
+        waiting_for_email.pop(user_id, None)  # Удаляем пользователя из ожидания
+        await update.message.reply_text("Спасибо! Теперь вы можете задавать вопросы.")
+    else:
+        await update.message.reply_text("Некорректный email. Пожалуйста, введите вашу рабочую почту (должна оканчиваться на @gazprom-neft.ru).")
+
 async def handle_message(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
     username = update.message.from_user.username or ""
@@ -51,7 +65,6 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
         
         context_info = process_query(user_id, user_message)
         
-        # Логируем релевантный документ и чанки
         if context_info["document"]:
             relevant_doc = context_info["document"]
             relevant_chunks = context_info["context"].split("\n\n")
@@ -59,14 +72,18 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
             log_relevant_documents([relevant_doc])
             log_relevant_chunks(relevant_chunks)
 
-            # Формируем полный текст промта
             prompt_text = template.format(context=context_info['context'], question=user_message)
-            
-            log_prompt(prompt_text)  # Логируем полный текст промта
+            log_prompt(prompt_text)
 
-            response = chain.invoke({"context": context_info['context'], "question": user_message})  # Отправляем запрос с полным текстом
+            response = chain.invoke({"context": context_info['context'], "question": user_message})
             log_ai_response(response)
-            
+
+            # Получаем FIO (например, из профиля пользователя или задаем вручную)
+            fio = "Имя Фамилия"  # Замените на реальное значение
+
+            # Сохранение запроса и ответа в базу данных
+            insert_message(user_id, fio or "", username or "", user_message or "", response or "", relevant_doc or "")
+
             await update.message.reply_text(response)
         else:
             await update.message.reply_text("Извините, не удалось найти информацию для ответа на ваш вопрос.")
@@ -127,17 +144,22 @@ def periodic_check():
         time.sleep(600)
 
 def main():
-    application = ApplicationBuilder().token("7902299353:AAEr8S8lybuzGM1A4OmBtUdr-n4ItPs9tBs").build()
+    application = ApplicationBuilder().token("YOUR_TOKEN").build()
     
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("question", question))
     application.add_handler(CommandHandler("stop", stop))
     application.add_handler(CommandHandler("info", info))
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
+    # Обработчик текстовых сообщений для ввода электронной почты
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND & filters.Regex(r"^[a-zA-Z0-9._%+-]+@gazprom-neft\.ru$"), handle_email_input))
+    
+    # Обработчик текстовых сообщений для вопросов
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+
     threading.Thread(target=periodic_check, daemon=True).start()
 
     application.run_polling()
     
 if __name__ == '__main__':
-    main()
+    main()    

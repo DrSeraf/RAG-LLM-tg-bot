@@ -27,7 +27,7 @@ def insert_message(user_id, fio, username, user_message, bot_response, document)
         INSERT INTO messages (user_id, fio, username, user_message, bot_response, doc)
         VALUES (%s, %s, %s, %s, %s, %s)
         """
-        values = (user_id, fio, username, user_message, bot_response, document)
+        values = (user_id, fio or "", username or "", user_message or "", bot_response or "", document or "")
         
         try:
             cursor.execute(query, values)
