@@ -79,7 +79,7 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
             log_ai_response(response)
 
             # Получаем FIO (например, из профиля пользователя или задаем вручную)
-            fio = "Имя Фамилия"  # Замените на реальное значение
+            fio = "Имя Фамилия"  # Заменить потом на реальное значение
 
             # Сохранение запроса и ответа в базу данных
             insert_message(user_id, fio or "", username or "", user_message or "", response or "", relevant_doc or "")
@@ -111,7 +111,7 @@ async def stop(update: Update, context: CallbackContext) -> None:
 async def info(update: Update, context: CallbackContext) -> None:
     document_list = (
         "<b>Список документов:</b>\n\n"
-        "<i>1.</i> <b>Пложение о Закупках;</b>\n"
+        "<i>1.</i> <b>Положение о Закупках;</b>\n"
         "<i>2.</i> <b>Разработка стратегии закупки.</b> <i>Версия: 1.0;</i>\n"
         "<i>3.</i> <b>Требования к порядку рассмотрения, оценки и сопоставления;</b>\n"
         "<i>4.</i> <b>Работа с коммерческими предложениями.</b> <i>Версия: 1.0;</i>\n"
