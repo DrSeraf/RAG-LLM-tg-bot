@@ -9,6 +9,7 @@ import threading
 import time
 import re  # Для проверки валидности email
 from logger import log_start, log_periodic, log_received_question, log_relevant_documents, log_relevant_chunks, log_ai_response, log_user_question, log_prompt
+from query_handler import process_query, template, chain 
 
 # Глобальные переменные для отслеживания состояния ожидания вопросов и регистрации
 waiting_for_questions = {}
@@ -58,14 +59,12 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
             log_relevant_documents([relevant_doc])
             log_relevant_chunks(relevant_chunks)
 
-            prompt_input = {
-                "context": context_info['context'],  
-                "question": user_message
-            }
+            # Формируем полный текст промта
+            prompt_text = template.format(context=context_info['context'], question=user_message)
             
-            log_prompt(prompt_input)
+            log_prompt(prompt_text)  # Логируем полный текст промта
 
-            response = context_info["answer"]
+            response = chain.invoke({"context": context_info['context'], "question": user_message})  # Отправляем запрос с полным текстом
             log_ai_response(response)
             
             await update.message.reply_text(response)
