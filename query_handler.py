@@ -10,6 +10,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from yandex_chain import YandexLLM, YandexEmbeddings
 from logger import log_relevant_documents, log_relevant_chunks_with_distance
+from langchain_community.vectorstores import FAISS
 
 # Путь к директории с векторными базами данных
 vector_store_path = "VDB"
@@ -31,6 +32,15 @@ def load_vector_stores():
 
 # Загрузка векторных баз данных
 vector_stores = load_vector_stores()
+
+# Проверка размерности для каждого векторного хранилища
+#for filename, vector_store in vector_stores.items():
+#    # Проверка на наличие атрибута index и получение размерности
+#    if hasattr(vector_store, 'index'):
+#        vector_dimension = vector_store.index.d  # Получаем размерность векторов
+#        print(f"Размерность векторов в FAISS для '{filename}': {vector_dimension}")
+#    else:
+#        print(f"Не удалось получить размерность для '{filename}'.")
 
 # Инициализация LLM
 LLM = YandexLLM(folder_id="b1gl2okl62ftk25l20uh", api_key="AQVNwlhgV0_s6XQwJv_XYP3cY-LM8w50dsCSQi-H", temperature=0.2)
