@@ -9,8 +9,9 @@ from langchain.schema import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from yandex_chain import YandexLLM, YandexEmbeddings
-from logger import log_relevant_documents, log_relevant_chunks_with_distance
+from logger import log_relevant_documents, log_relevant_chunks_with_distance, log_document_info
 from langchain_community.vectorstores import FAISS
+from logger import app_logger
 
 # Путь к директории с векторными базами данных
 vector_store_path = "VDB"
@@ -64,31 +65,42 @@ chain = (
     | StrOutputParser()
 )
 
+# query_handler.py
 def get_most_relevant_document(query):
     min_distance = float('inf')
     most_relevant_doc = None
-
     documents_used = []  # Для хранения использованных документов
 
     for filename, vs in vector_stores.items():
         docs = vs.similarity_search_with_score(query, k=1)
         if docs:
             distance = docs[0][1]
+            document = docs[0][0]  # Получаем объект документа
+            
+            # Извлекаем необходимые данные из объекта документа
+            document_id = document.id  # Идентификатор документа
+            document_content = document.page_content  # Содержимое документа
+            
             documents_used.append((filename, distance))  # Добавляем документ и его расстояние
             
+            # Логируем информацию о документе (без вектора)
+            log_document_info(filename, distance, document_content)
+
             if distance < min_distance:
                 min_distance = distance
                 most_relevant_doc = filename
 
     # Логируем использованные документы по убыванию релевантности (по расстоянию)
     documents_used.sort(key=lambda x: x[1])  # Сортируем по расстоянию (меньшее значение — более релевантно)
-    
-    # Записываем только топ-5 документов в логах (если есть)
-    top_documents = [doc[0] for doc in documents_used[:5]]
-    
+
+    top_documents = [doc[0] for doc in documents_used[:5]]  # Записываем только топ-5 документов в логах
     log_relevant_documents(top_documents)
 
     return most_relevant_doc
+
+# Обновленная функция для логирования информации о документе без вектора
+def log_document_info(doc_name, distance, content):
+    app_logger.info(f"Документ: {doc_name}, Расстояние: {distance:.4f}, Содержимое: {content[:100]}...")  # Логируем первые 100 символов содержимого для краткости
 
 def get_context(user_id, query):
     relevant_doc = get_most_relevant_document(query)

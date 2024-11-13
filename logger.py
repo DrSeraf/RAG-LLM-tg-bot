@@ -50,3 +50,7 @@ def log_relevant_chunks_with_distance(chunks_info):
     app_logger.info("Список чанков:")
     for distance, doc_name, chunk in chunks_info:
         app_logger.info(f"{distance:.4f} - {doc_name}: \"{chunk}\"")  # Форматируем расстояние до 4 знаков после запятой
+
+# logger.py (добавьте эту функцию)
+def log_document_info(doc_name, distance, vector):
+    app_logger.info(f"Документ: {doc_name}, Расстояние: {distance:.4f}, Вектор: {vector}")
