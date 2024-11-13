@@ -9,7 +9,7 @@ from langchain.schema import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from yandex_chain import YandexLLM, YandexEmbeddings
-from logger import log_relevant_documents, log_relevant_chunks
+from logger import log_relevant_documents, log_relevant_chunks_with_distance
 
 # Путь к директории с векторными базами данных
 vector_store_path = "VDB"
@@ -84,19 +84,20 @@ def get_context(user_id, query):
     relevant_doc = get_most_relevant_document(query)
     
     if relevant_doc:
-        docs = vector_stores[relevant_doc].similarity_search(query, k=5)
+        docs_with_scores = vector_stores[relevant_doc].similarity_search_with_score(query, k=5)
         
-        context_chunks = [d.page_content for d in docs]
+        context_chunks_info = [(score[1], relevant_doc, score[0].page_content) for score in docs_with_scores]
         
-        # Логируем выбранные чанки контекста 
-        #log_relevant_chunks(context_chunks)
+        # Логируем выбранные чанки контекста с расстоянием и документом 
+        log_relevant_chunks_with_distance(context_chunks_info)
 
-        context = "\n\n".join(context_chunks)
+        context = "\n\n".join([chunk[2] for chunk in context_chunks_info])  # Получаем только текст чанков
         
         return {
             "context": context,
             "document": relevant_doc,
-            "success": True
+            "success": True,
+            "chunks_info": context_chunks_info  # Возвращаем информацию о чанках для дальнейшего использования (если нужно)
         }
     
     return {

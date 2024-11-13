@@ -45,3 +45,8 @@ def log_ai_response(response):
 def log_received_question(user_info, user_message):
     first_name, last_name, username = user_info
     app_logger.info(f"Получено сообщение от пользователя {username} ({first_name} {last_name}): {user_message}")
+
+def log_relevant_chunks_with_distance(chunks_info):
+    app_logger.info("Список чанков:")
+    for distance, doc_name, chunk in chunks_info:
+        app_logger.info(f"{distance:.4f} - {doc_name}: \"{chunk}\"")  # Форматируем расстояние до 4 знаков после запятой
