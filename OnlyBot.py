@@ -54,8 +54,12 @@ async def handle_email_input(update: Update, context: CallbackContext) -> None:
 
 async def handle_message(update: Update, context: CallbackContext) -> None:
     user_id = update.message.from_user.id
+    first_name = update.message.from_user.first_name or ""
+    last_name = update.message.from_user.last_name or ""
     username = update.message.from_user.username or ""
-    
+
+    fio = f"{first_name} {last_name}".strip()  # Формируем ФИО
+
     if waiting_for_questions.get(user_id, False):
         user_message = update.message.text  
         
@@ -78,11 +82,8 @@ async def handle_message(update: Update, context: CallbackContext) -> None:
             response = chain.invoke({"context": context_info['context'], "question": user_message})
             log_ai_response(response)
 
-            # Получаем FIO (например, из профиля пользователя или задаем вручную)
-            fio = "Имя Фамилия"  # Заменить потом на реальное значение
-
             # Сохранение запроса и ответа в базу данных
-            insert_message(user_id, fio or "", username or "", user_message or "", response or "", relevant_doc or "")
+            insert_message(user_id, fio, username, user_message, response, relevant_doc)
 
             await update.message.reply_text(response)
         else:
