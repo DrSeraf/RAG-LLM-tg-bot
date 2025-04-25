@@ -17,7 +17,7 @@ from logger import app_logger
 vector_store_path = "VDB"
 
 # Инициализация объекта embeddings
-embeddings = YandexEmbeddings(folder_id="b1gl2okl62ftk25l20uh", api_key="AQVNwlhgV0_s6XQwJv_XYP3cY-LM8w50dsCSQi-H")
+embeddings = YandexEmbeddings(folder_id="", api_key="")
 
 # Функция для загрузки векторных баз данных
 def load_vector_stores():
