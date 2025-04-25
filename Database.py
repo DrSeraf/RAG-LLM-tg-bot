@@ -131,7 +131,7 @@ print(f"\nОбщее количество чанков: {total_chunks}")
 print(f"Количество обработанных документов: {len(file_groups)}")
 print(f"Среднее количество чанков на документ: {total_chunks / len(file_groups):.2f}")
 
-embeddings = YandexEmbeddings(folder_id="b1gl2okl62ftk25l20uh", api_key="AQVNwlhgV0_s6XQwJv_XYP3cY-LM8w50dsCSQi-H")
+embeddings = YandexEmbeddings(folder_id="", api_key="")
 
 vector_stores = {}
 for filename, group in file_groups.items():
