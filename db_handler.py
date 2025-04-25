@@ -5,11 +5,11 @@ from mysql.connector import Error
 def create_connection():
     try:
         connection = mysql.connector.connect(
-            host='217.114.43.104',
-            port=3306,
-            user='seraf',
-            password='ark_wenegreT1',
-            database='boriy_bot'
+            host='',
+            port=,
+            user='',
+            password='',
+            database=''
         )
         if connection.is_connected():
             print("Успешное подключение к БД")
