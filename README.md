@@ -128,7 +128,4 @@
 
 ## Контакты
 
-По вопросам работы бота обращайтесь:
-
-- Email: [it-support@gazprom-neft.ru](mailto:it-support@gazprom-neft.ru)
-- [Внутренний портал поддержки](https://internal-portal.gazprom-neft.ru)
+i@drseraf.ru
