@@ -45,11 +45,11 @@
      TELEGRAM_TOKEN=your_bot_token
      YANDEX_API_KEY=your_yandex_api_key
      YANDEX_FOLDER_ID=your_folder_id
-     DB_HOST=217.114.43.104
-     DB_PORT=3306
-     DB_USER=seraf
-     DB_PASSWORD=ark_wenegreT1
-     DB_NAME=boriy_bot
+     DB_HOST=your_db
+     DB_PORT=your_db
+     DB_USER=your_db
+     DB_PASSWORD=your_db
+     DB_NAME=your_db
      ```
 
 ### Запуск
