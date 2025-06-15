@@ -26,7 +26,7 @@
 1. Клонируйте репозиторий:
 
    ```bash
-   git clone https://github.com/yourusername/boriy-bot.git
+   git clone https://github.com/DrSeraf/RAG-LLM-tg-bot
    cd boriy-bot
    ```
 
