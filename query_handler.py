@@ -1,4 +1,6 @@
 import os
+from dotenv import load_dotenv
+load_dotenv()
 import time
 import re
 from unidecode import unidecode
@@ -17,7 +19,7 @@ from logger import app_logger
 vector_store_path = "VDB"
 
 # Инициализация объекта embeddings
-embeddings = YandexEmbeddings(folder_id="", api_key="")
+embeddings = YandexEmbeddings(folder_id="", api_key=os.environ["YANDEX_API_KEY"])
 
 # Функция для загрузки векторных баз данных
 def load_vector_stores():
@@ -44,7 +46,7 @@ vector_stores = load_vector_stores()
 #        print(f"Не удалось получить размерность для '{filename}'.")
 
 # Инициализация LLM
-LLM = YandexLLM(folder_id="b1gl2okl62ftk25l20uh", api_key="AQVNwlhgV0_s6XQwJv_XYP3cY-LM8w50dsCSQi-H", temperature=0.2)
+LLM = YandexLLM(folder_id="b1gl2okl62ftk25l20uh", api_key=os.environ["YANDEX_API_KEY"], temperature=0.2)
 
 template = """
 Ты - юридический ассистент.
